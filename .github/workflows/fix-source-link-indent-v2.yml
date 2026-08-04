@@ -1,0 +1,74 @@
+name: Fix source-link indentation v2
+
+on:
+  pull_request:
+    types: [synchronize]
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: >-
+      github.event.pull_request.head.ref == 'feature/source-links' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fix feature branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main feature/source-links
+          git checkout -B feature/source-links origin/feature/source-links
+
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          path = Path('app/src/main/kotlin/org/fossify/gallery/extensions/Activity.kt')
+          text = path.read_text()
+          pattern = re.compile(
+              r'(?m)^(\s*)if \(success\) \{\n\1SourceLinkPreferences\.move\(this, oldPath, newPath\)\n\1\}'
+          )
+          matches = list(pattern.finditer(text))
+          if len(matches) != 1:
+              raise SystemExit(f'Expected one malformed block, found {len(matches)}')
+
+          def replacement(match):
+              indent = match.group(1)
+              return (
+                  f'{indent}if (success) {{\n'
+                  f'{indent}    SourceLinkPreferences.move(this, oldPath, newPath)\n'
+                  f'{indent}}}'
+              )
+
+          path.write_text(pattern.sub(replacement, text, count=1))
+          PY
+
+          rm -f .source-indent-trigger
+          git add \
+            app/src/main/kotlin/org/fossify/gallery/extensions/Activity.kt \
+            .source-indent-trigger
+          git commit -m "Fix source-link visibility integration formatting"
+          git push origin HEAD:feature/source-links
+
+      - name: Remove temporary workflow
+        if: always()
+        run: |
+          git reset --hard
+          git clean -fd
+          git fetch origin main
+          git checkout -B main origin/main
+          rm -f .github/workflows/fix-source-link-indent-v2.yml
+          git add .github/workflows/fix-source-link-indent-v2.yml
+          if ! git diff --cached --quiet; then
+            git commit -m "Remove temporary source-link formatting workflow"
+            git push origin HEAD:main
+          fi
