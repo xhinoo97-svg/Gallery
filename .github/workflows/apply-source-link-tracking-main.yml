@@ -1,8 +1,7 @@
 name: Apply source-link tracking patch
 
 on:
-  pull_request_target:
-    types: [synchronize]
+  push:
     branches:
       - main
 
@@ -11,9 +10,6 @@ permissions:
 
 jobs:
   apply:
-    if: >-
-      github.event.pull_request.head.ref == 'feature/source-links' &&
-      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -95,7 +91,8 @@ jobs:
           git fetch origin main
           git checkout -B main origin/main
           rm -f .github/workflows/apply-source-link-tracking-main.yml
-          git add .github/workflows/apply-source-link-tracking-main.yml
+          rm -f .source-link-main-trigger
+          git add .github/workflows/apply-source-link-tracking-main.yml .source-link-main-trigger
           if ! git diff --cached --quiet; then
             git commit -m "Remove temporary source-link tracking workflow"
             git push origin HEAD:main
