@@ -14,6 +14,7 @@ import org.fossify.gallery.R
 
 object SourceLinkManager {
     private const val PREFS_NAME = "source_links"
+    private const val CHROME_PACKAGE = "com.android.chrome"
 
     fun handle(activity: Activity, path: String) {
         if (path.isBlank()) {
@@ -158,10 +159,26 @@ object SourceLinkManager {
     }
 
     private fun openUrl(activity: Activity, url: String) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-        runCatching {
-            activity.startActivity(intent)
-        }.onFailure {
+        val uri = Uri.parse(url)
+        val chromeIntent = Intent(Intent.ACTION_VIEW, uri).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+            setPackage(CHROME_PACKAGE)
+        }
+        val defaultBrowserIntent = Intent(Intent.ACTION_VIEW, uri).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+        }
+
+        val opened = runCatching {
+            activity.startActivity(chromeIntent)
+            true
+        }.getOrElse {
+            runCatching {
+                activity.startActivity(defaultBrowserIntent)
+                true
+            }.getOrDefault(false)
+        }
+
+        if (!opened) {
             Toast.makeText(activity, R.string.cannot_open_source, Toast.LENGTH_SHORT).show()
         }
     }
