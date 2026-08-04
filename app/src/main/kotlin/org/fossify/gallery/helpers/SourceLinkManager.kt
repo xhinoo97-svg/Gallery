@@ -14,8 +14,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.fossify.gallery.R
 
 object SourceLinkManager {
-    private const val PREFS_NAME = "source_links"
     private const val CHROME_PACKAGE = "com.android.chrome"
+    private const val HORIZONTAL_PADDING_DP = 24
+    private const val VERTICAL_PADDING_DP = 8
 
     fun handle(activity: Activity, path: String) {
         if (path.isBlank()) {
@@ -23,7 +24,7 @@ object SourceLinkManager {
             return
         }
 
-        val storedUrl = getStoredUrl(activity, path)
+        val storedUrl = SourceLinkPreferences.get(activity, path)
         if (storedUrl.isBlank()) {
             showLinkDialog(activity, path, existingUrl = "")
         } else {
@@ -32,11 +33,11 @@ object SourceLinkManager {
     }
 
     fun hasSource(context: Context, path: String): Boolean {
-        return path.isNotBlank() && getStoredUrl(context, path).isNotBlank()
+        return path.isNotBlank() && SourceLinkPreferences.get(context, path).isNotBlank()
     }
 
     fun openStoredSource(activity: Activity, path: String) {
-        val storedUrl = getStoredUrl(activity, path)
+        val storedUrl = SourceLinkPreferences.get(activity, path)
         if (storedUrl.isBlank()) {
             handle(activity, path)
         } else {
@@ -48,14 +49,14 @@ object SourceLinkManager {
         context: Context,
         listener: SharedPreferences.OnSharedPreferenceChangeListener,
     ) {
-        preferences(context).registerOnSharedPreferenceChangeListener(listener)
+        SourceLinkPreferences.register(context, listener)
     }
 
     fun unregisterListener(
         context: Context,
         listener: SharedPreferences.OnSharedPreferenceChangeListener,
     ) {
-        preferences(context).unregisterOnSharedPreferenceChangeListener(listener)
+        SourceLinkPreferences.unregister(context, listener)
     }
 
     private fun showSourceActions(activity: Activity, path: String, storedUrl: String) {
@@ -80,11 +81,7 @@ object SourceLinkManager {
             .setMessage(R.string.delete_source_confirmation)
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.delete_source) { _, _ ->
-                preferences(activity)
-                    .edit()
-                    .remove(path)
-                    .apply()
-
+                SourceLinkPreferences.remove(activity, path)
                 Toast.makeText(activity, R.string.source_deleted, Toast.LENGTH_SHORT).show()
             }
             .show()
@@ -92,8 +89,8 @@ object SourceLinkManager {
 
     private fun showLinkDialog(activity: Activity, path: String, existingUrl: String) {
         val density = activity.resources.displayMetrics.density
-        val horizontalPadding = (24 * density).toInt()
-        val verticalPadding = (8 * density).toInt()
+        val horizontalPadding = (HORIZONTAL_PADDING_DP * density).toInt()
+        val verticalPadding = (VERTICAL_PADDING_DP * density).toInt()
 
         val input = EditText(activity).apply {
             hint = activity.getString(R.string.source_url_hint)
@@ -136,11 +133,7 @@ object SourceLinkManager {
                     return@setOnClickListener
                 }
 
-                preferences(activity)
-                    .edit()
-                    .putString(path, normalizedUrl)
-                    .apply()
-
+                SourceLinkPreferences.put(activity, path, normalizedUrl)
                 dialog.dismiss()
                 Toast.makeText(activity, R.string.source_saved, Toast.LENGTH_SHORT).show()
             }
@@ -201,11 +194,4 @@ object SourceLinkManager {
             Toast.makeText(activity, R.string.chrome_secure_folder_required, Toast.LENGTH_LONG).show()
         }
     }
-
-    private fun getStoredUrl(context: Context, path: String): String {
-        return preferences(context).getString(path, null).orEmpty()
-    }
-
-    private fun preferences(context: Context) =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 }
