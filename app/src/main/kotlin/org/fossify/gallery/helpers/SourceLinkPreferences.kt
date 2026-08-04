@@ -117,15 +117,15 @@ internal object SourceLinkPreferences {
     }
 
     private fun ensureAlias(preferences: SharedPreferences, path: String) {
+        val identity = createCandidate(path)?.let { resolveIdentity(path, it) } ?: return
         val storedAliasKey = preferences.getString(pathAliasKey(path), null)
         if (
-            storedAliasKey != null &&
+            storedAliasKey == identity.aliasKey &&
             decodeAliasPath(preferences.getString(storedAliasKey, null).orEmpty()) == path
         ) {
             return
         }
 
-        val identity = createCandidate(path)?.let { resolveIdentity(path, it) } ?: return
         val currentOwner = decodeAliasPath(
             preferences.getString(identity.aliasKey, null).orEmpty(),
         )
@@ -133,6 +133,7 @@ internal object SourceLinkPreferences {
         val editor = preferences.edit()
             .putBoolean(identity.sizeMarkerKey, true)
 
+        removePathMetadata(preferences, editor, path)
         if (currentOwner == null || currentOwner == path || !File(currentOwner).isFile) {
             editor
                 .putString(pathAliasKey(path), identity.aliasKey)
