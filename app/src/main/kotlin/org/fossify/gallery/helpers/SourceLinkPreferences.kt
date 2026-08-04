@@ -5,15 +5,13 @@ import android.content.SharedPreferences
 import java.io.File
 
 internal object SourceLinkPreferences {
-    private const val PREFS_NAME = "source_links"
-
     @Synchronized
     fun get(context: Context, path: String): String {
         if (path.isBlank()) {
             return ""
         }
 
-        val preferences = preferences(context)
+        val preferences = sourceLinkPreferences(context)
         val directUrl = preferences.getString(path, null).orEmpty()
         return if (directUrl.isNotBlank()) {
             ensureAlias(preferences, path)
@@ -33,7 +31,7 @@ internal object SourceLinkPreferences {
             SourceLinkIdentity.resolve(path, candidate)
         }
         writeEntry(
-            preferences = preferences(context),
+            preferences = sourceLinkPreferences(context),
             oldPath = null,
             newPath = path,
             url = url,
@@ -47,7 +45,7 @@ internal object SourceLinkPreferences {
             return
         }
 
-        val preferences = preferences(context)
+        val preferences = sourceLinkPreferences(context)
         val url = preferences.getString(oldPath, null).orEmpty()
         if (url.isBlank()) {
             return
@@ -71,7 +69,7 @@ internal object SourceLinkPreferences {
             return
         }
 
-        val preferences = preferences(context)
+        val preferences = sourceLinkPreferences(context)
         val editor = preferences.edit()
         removePathMetadata(preferences, editor, path)
         editor.remove(path).apply()
@@ -81,14 +79,14 @@ internal object SourceLinkPreferences {
         context: Context,
         listener: SharedPreferences.OnSharedPreferenceChangeListener,
     ) {
-        preferences(context).registerOnSharedPreferenceChangeListener(listener)
+        sourceLinkPreferences(context).registerOnSharedPreferenceChangeListener(listener)
     }
 
     fun unregister(
         context: Context,
         listener: SharedPreferences.OnSharedPreferenceChangeListener,
     ) {
-        preferences(context).unregisterOnSharedPreferenceChangeListener(listener)
+        sourceLinkPreferences(context).unregisterOnSharedPreferenceChangeListener(listener)
     }
 
     private fun recoverMovedLink(preferences: SharedPreferences, path: String): String {
@@ -193,8 +191,10 @@ internal object SourceLinkPreferences {
         }
         editor.remove(metadataKey)
     }
+}
 
-    private fun preferences(context: Context): SharedPreferences {
-        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    }
+private const val SOURCE_LINK_PREFS_NAME = "source_links"
+
+private fun sourceLinkPreferences(context: Context): SharedPreferences {
+    return context.getSharedPreferences(SOURCE_LINK_PREFS_NAME, Context.MODE_PRIVATE)
 }
