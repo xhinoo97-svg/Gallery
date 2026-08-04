@@ -19,6 +19,7 @@ import org.fossify.commons.extensions.updatePaddingWithBase
 import org.fossify.gallery.R
 import org.fossify.gallery.extensions.config
 import org.fossify.gallery.helpers.SourceLinkManager
+import org.fossify.gallery.helpers.SourceLinkPreferences
 
 abstract class BaseViewerActivity : SimpleActivity() {
     override val padCutout: Boolean = false
@@ -50,7 +51,7 @@ abstract class BaseViewerActivity : SimpleActivity() {
 
     override fun onResume() {
         super.onResume()
-        SourceLinkManager.registerListener(this, sourcePreferencesListener)
+        SourceLinkPreferences.register(this, sourcePreferencesListener)
         attachSourcePagerListener()
 
         findViewById<MaterialButton>(R.id.source_link_button)?.apply {
@@ -67,7 +68,7 @@ abstract class BaseViewerActivity : SimpleActivity() {
     }
 
     override fun onPause() {
-        SourceLinkManager.unregisterListener(this, sourcePreferencesListener)
+        SourceLinkPreferences.unregister(this, sourcePreferencesListener)
         sourcePager?.removeOnPageChangeListener(sourcePageChangeListener)
         sourcePager = null
         super.onPause()
