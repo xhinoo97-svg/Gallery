@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="source">Fonte</string>
+    <string name="add_source">Aggiungi fonte</string>
+    <string name="source_url_hint">https://esempio.com</string>
+    <string name="paste">Incolla</string>
+    <string name="save">Salva</string>
+    <string name="invalid_source_url">Inserisci un link web valido</string>
+    <string name="cannot_open_source">Impossibile aprire la fonte</string>
+    <string name="source_photo_not_available">Foto non disponibile</string>
+</resources>
