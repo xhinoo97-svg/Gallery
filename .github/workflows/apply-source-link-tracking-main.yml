@@ -1,0 +1,102 @@
+name: Apply source-link tracking patch
+
+on:
+  pull_request_target:
+    types: [synchronize]
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: >-
+      github.event.pull_request.head.ref == 'feature/source-links' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch feature branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main feature/source-links
+          git checkout -B feature/source-links origin/feature/source-links
+
+          test -f .source-link-patch/SourceLinkPreferences.kt
+          cp .source-link-patch/SourceLinkPreferences.kt \
+            app/src/main/kotlin/org/fossify/gallery/helpers/SourceLinkPreferences.kt
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('app/src/main/kotlin/org/fossify/gallery/extensions/Activity.kt')
+          text = path.read_text()
+
+          import_anchor = 'import org.fossify.gallery.helpers.RECYCLE_BIN\n'
+          source_import = 'import org.fossify.gallery.helpers.SourceLinkPreferences\n'
+          if source_import not in text:
+              if text.count(import_anchor) != 1:
+                  raise SystemExit('Expected exactly one RECYCLE_BIN import')
+              text = text.replace(import_anchor, import_anchor + source_import, 1)
+
+          old = '''    renameFile(oldPath, newPath, false) { success, useAndroid30Way ->
+              runOnUiThread {
+                  callback?.invoke(newPath)
+              }
+
+              ensureBackgroundThread {
+                  updateDBMediaPath(oldPath, newPath)
+              }
+          }
+          '''
+          new = '''    renameFile(oldPath, newPath, false) { success, useAndroid30Way ->
+              if (success) {
+                  SourceLinkPreferences.move(this, oldPath, newPath)
+              }
+
+              runOnUiThread {
+                  callback?.invoke(newPath)
+              }
+
+              ensureBackgroundThread {
+                  updateDBMediaPath(oldPath, newPath)
+              }
+          }
+          '''
+          if new not in text:
+              if text.count(old) != 1:
+                  raise SystemExit('Expected exactly one toggleFileVisibility callback')
+              text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+
+          rm -rf .source-link-patch
+          rm -f .github/workflows/apply-source-link-tracking-fixes.yml
+          rm -f .source-link-tracking-trigger
+          git add \
+            app/src/main/kotlin/org/fossify/gallery/extensions/Activity.kt \
+            app/src/main/kotlin/org/fossify/gallery/helpers/SourceLinkPreferences.kt \
+            .source-link-patch \
+            .github/workflows/apply-source-link-tracking-fixes.yml \
+            .source-link-tracking-trigger
+          git commit -m "Preserve source links across visibility and external renames"
+          git push origin HEAD:feature/source-links
+
+      - name: Remove temporary workflow from main
+        if: always()
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
+          rm -f .github/workflows/apply-source-link-tracking-main.yml
+          git add .github/workflows/apply-source-link-tracking-main.yml
+          if ! git diff --cached --quiet; then
+            git commit -m "Remove temporary source-link tracking workflow"
+            git push origin HEAD:main
+          fi
