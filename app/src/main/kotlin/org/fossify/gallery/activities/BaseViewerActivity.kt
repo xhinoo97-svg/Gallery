@@ -2,7 +2,6 @@ package org.fossify.gallery.activities
 
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.view.MenuItem
 import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -134,12 +133,6 @@ abstract class BaseViewerActivity : SimpleActivity() {
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    fun onSourceLinkMenuClick(item: MenuItem): Boolean {
-        SourceLinkManager.handle(this, getCurrentSourcePath())
-        return true
-    }
-
     private fun attachSourcePagerListener() {
         val pager = findViewById<ViewPager>(R.id.view_pager)
         if (pager !== sourcePager) {
@@ -149,7 +142,7 @@ abstract class BaseViewerActivity : SimpleActivity() {
         }
     }
 
-    private fun refreshSourceLinkButton() {
+    protected fun refreshSourceLinkButton() {
         val button = findViewById<MaterialButton>(R.id.source_link_button) ?: return
         val path = getCurrentSourcePath()
 
@@ -163,11 +156,5 @@ abstract class BaseViewerActivity : SimpleActivity() {
         button.setText(if (hasSource) R.string.go_to_source else R.string.add_link)
     }
 
-    private fun getCurrentSourcePath(): String {
-        return runCatching {
-            javaClass.getDeclaredMethod("getCurrentPath").apply {
-                isAccessible = true
-            }.invoke(this) as? String
-        }.getOrNull().orEmpty()
-    }
+    protected open fun getCurrentSourcePath(): String = ""
 }
