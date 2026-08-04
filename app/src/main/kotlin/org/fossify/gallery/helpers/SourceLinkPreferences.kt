@@ -5,6 +5,12 @@ import android.content.SharedPreferences
 import java.io.File
 
 internal object SourceLinkPreferences {
+    private const val INTERNAL_PREFIX = "__source_link_"
+
+    fun affectsVisibleLink(key: String?): Boolean {
+        return key == null || !key.startsWith(INTERNAL_PREFIX)
+    }
+
     @Synchronized
     fun get(context: Context, path: String): String {
         if (path.isBlank()) {
