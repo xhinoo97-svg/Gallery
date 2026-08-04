@@ -28,6 +28,7 @@ internal object SourceLinkIdentity {
     private const val HEX_HIGH_SHIFT = 4
     private const val BYTE_MASK = 0xFF
     private const val HEX_LOW_MASK = 0x0F
+    private const val HEX_CHARS_PER_BYTE = 2
     private const val HEX_DIGITS = "0123456789abcdef"
 
     fun createCandidate(path: String): SourceLinkFileCandidate? {
@@ -122,7 +123,7 @@ internal object SourceLinkIdentity {
     }
 
     private fun ByteArray.toHex(): String {
-        return buildString(size * 2) {
+        return buildString(size * HEX_CHARS_PER_BYTE) {
             this@toHex.forEach { byte ->
                 val value = byte.toInt() and BYTE_MASK
                 append(HEX_DIGITS[value ushr HEX_HIGH_SHIFT])
