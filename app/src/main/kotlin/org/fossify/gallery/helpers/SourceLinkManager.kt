@@ -159,27 +159,18 @@ object SourceLinkManager {
     }
 
     private fun openUrl(activity: Activity, url: String) {
-        val uri = Uri.parse(url)
-        val chromeIntent = Intent(Intent.ACTION_VIEW, uri).apply {
+        val chromeIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
             addCategory(Intent.CATEGORY_BROWSABLE)
             setPackage(CHROME_PACKAGE)
-        }
-        val defaultBrowserIntent = Intent(Intent.ACTION_VIEW, uri).apply {
-            addCategory(Intent.CATEGORY_BROWSABLE)
         }
 
         val opened = runCatching {
             activity.startActivity(chromeIntent)
             true
-        }.getOrElse {
-            runCatching {
-                activity.startActivity(defaultBrowserIntent)
-                true
-            }.getOrDefault(false)
-        }
+        }.getOrDefault(false)
 
         if (!opened) {
-            Toast.makeText(activity, R.string.cannot_open_source, Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, R.string.chrome_secure_folder_required, Toast.LENGTH_LONG).show()
         }
     }
 
