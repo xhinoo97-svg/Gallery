@@ -92,12 +92,10 @@ internal object SourceLinkPreferences {
     }
 
     private fun recoverMovedLink(preferences: SharedPreferences, path: String): String {
-        val candidate = SourceLinkIdentity.createCandidate(path) ?: return ""
-        if (!preferences.getBoolean(candidate.sizeMarkerKey, false)) {
-            return ""
-        }
-
-        val identity = SourceLinkIdentity.resolve(path, candidate) ?: return ""
+        val identity = SourceLinkIdentity.createCandidate(path)
+            ?.takeIf { candidate -> preferences.getBoolean(candidate.sizeMarkerKey, false) }
+            ?.let { candidate -> SourceLinkIdentity.resolve(path, candidate) }
+            ?: return ""
         val oldPath = SourceLinkAlias.decodePath(
             preferences.getString(identity.aliasKey, null).orEmpty(),
         ) ?: return ""
