@@ -2,6 +2,7 @@
 <resources>
     <string name="source">Fonte</string>
     <string name="add_source">Aggiungi fonte</string>
+    <string name="add_link">Aggiungi link</string>
     <string name="edit_source">Modifica</string>
     <string name="open_source">Apri fonte</string>
     <string name="go_to_source">Vai alla fonte</string>
