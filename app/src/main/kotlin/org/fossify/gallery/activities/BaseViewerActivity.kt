@@ -9,10 +9,12 @@ import androidx.core.view.WindowInsetsCompat.Type
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.viewpager.widget.ViewPager
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.button.MaterialButton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.fossify.commons.extensions.updateMarginWithBase
 import org.fossify.commons.extensions.updatePaddingWithBase
 import org.fossify.gallery.R
@@ -25,17 +27,14 @@ abstract class BaseViewerActivity : SimpleActivity() {
     abstract val contentHolder: View
     abstract val appBarLayout: AppBarLayout
 
-    private var sourcePager: ViewPager? = null
-
-    private val sourcePageChangeListener = object : ViewPager.SimpleOnPageChangeListener() {
-        override fun onPageSelected(position: Int) {
-            refreshSourceLinkButton()
-        }
-    }
+    private var sourceRefreshJob: Job? = null
+    private val sourceRefreshRunnable = Runnable { refreshSourceLinkButton() }
 
     private val sourcePreferencesListener =
-        SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
-            refreshSourceLinkButton()
+        SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (SourceLinkPreferences.affectsVisibleLink(key)) {
+                scheduleSourceLinkButtonRefresh()
+            }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,7 +50,6 @@ abstract class BaseViewerActivity : SimpleActivity() {
     override fun onResume() {
         super.onResume()
         SourceLinkPreferences.register(this, sourcePreferencesListener)
-        attachSourcePagerListener()
 
         findViewById<MaterialButton>(R.id.source_link_button)?.apply {
             setOnClickListener {
@@ -62,14 +60,14 @@ abstract class BaseViewerActivity : SimpleActivity() {
                     SourceLinkManager.handle(this@BaseViewerActivity, path)
                 }
             }
-            post { refreshSourceLinkButton() }
+            scheduleSourceLinkButtonRefresh()
         }
     }
 
     override fun onPause() {
         SourceLinkPreferences.unregister(this, sourcePreferencesListener)
-        sourcePager?.removeOnPageChangeListener(sourcePageChangeListener)
-        sourcePager = null
+        sourceRefreshJob?.cancel()
+        findViewById<View>(R.id.source_link_button)?.removeCallbacks(sourceRefreshRunnable)
         super.onPause()
     }
 
@@ -133,27 +131,38 @@ abstract class BaseViewerActivity : SimpleActivity() {
         }
     }
 
-    private fun attachSourcePagerListener() {
-        val pager = findViewById<ViewPager>(R.id.view_pager)
-        if (pager !== sourcePager) {
-            sourcePager?.removeOnPageChangeListener(sourcePageChangeListener)
-            sourcePager = pager
-            sourcePager?.addOnPageChangeListener(sourcePageChangeListener)
+    private fun scheduleSourceLinkButtonRefresh() {
+        findViewById<View>(R.id.source_link_button)?.apply {
+            removeCallbacks(sourceRefreshRunnable)
+            post(sourceRefreshRunnable)
         }
     }
 
     protected fun refreshSourceLinkButton() {
         val button = findViewById<MaterialButton>(R.id.source_link_button) ?: return
         val path = getCurrentSourcePath()
+        sourceRefreshJob?.cancel()
 
         if (path.isBlank()) {
             button.visibility = View.GONE
+            button.isEnabled = false
             return
         }
 
-        val hasSource = SourceLinkManager.hasSource(this, path)
-        button.visibility = View.VISIBLE
-        button.setText(if (hasSource) R.string.go_to_source else R.string.add_link)
+        button.isEnabled = false
+        sourceRefreshJob = lifecycleScope.launch {
+            val hasSource = withContext(Dispatchers.IO) {
+                SourceLinkManager.hasSource(applicationContext, path)
+            }
+
+            if (getCurrentSourcePath() != path) {
+                return@launch
+            }
+
+            button.visibility = View.VISIBLE
+            button.setText(if (hasSource) R.string.go_to_source else R.string.add_link)
+            button.isEnabled = true
+        }
     }
 
     protected open fun getCurrentSourcePath(): String = ""
