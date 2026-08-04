@@ -2,9 +2,6 @@ name: Build Source Links APK
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feature/source-links
   pull_request:
     branches:
       - main
