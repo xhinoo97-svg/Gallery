@@ -17,6 +17,23 @@ internal object SourceLinkPreferences {
             .apply()
     }
 
+    fun move(context: Context, oldPath: String, newPath: String) {
+        if (oldPath == newPath) {
+            return
+        }
+
+        val url = get(context, oldPath)
+        if (url.isBlank()) {
+            return
+        }
+
+        preferences(context)
+            .edit()
+            .remove(oldPath)
+            .putString(newPath, url)
+            .apply()
+    }
+
     fun remove(context: Context, path: String) {
         preferences(context)
             .edit()
