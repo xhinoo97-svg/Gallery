@@ -76,3 +76,6 @@ jobs:
           git add app/src/main/kotlin/org/fossify/gallery/extensions/Activity.kt .github/workflows/apply-source-delete-cleanup.yml
           git commit -m "Clean source links after successful media deletion"
           git push origin HEAD:feature/source-links
+
+      - name: Trigger marker
+        run: echo cleanup
