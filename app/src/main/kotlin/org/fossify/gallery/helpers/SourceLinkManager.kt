@@ -23,13 +23,45 @@ object SourceLinkManager {
 
         val storedUrl = preferences(activity).getString(path, null).orEmpty()
         if (storedUrl.isBlank()) {
-            showAddDialog(activity, path)
+            showLinkDialog(activity, path, existingUrl = "")
         } else {
-            openUrl(activity, storedUrl)
+            showSourceActions(activity, path, storedUrl)
         }
     }
 
-    private fun showAddDialog(activity: Activity, path: String) {
+    private fun showSourceActions(activity: Activity, path: String, storedUrl: String) {
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(R.string.source)
+            .setMessage(storedUrl)
+            .setNegativeButton(R.string.delete_source) { _, _ ->
+                confirmDelete(activity, path)
+            }
+            .setNeutralButton(R.string.edit_source) { _, _ ->
+                showLinkDialog(activity, path, storedUrl)
+            }
+            .setPositiveButton(R.string.open_source) { _, _ ->
+                openUrl(activity, storedUrl)
+            }
+            .show()
+    }
+
+    private fun confirmDelete(activity: Activity, path: String) {
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(R.string.delete_source)
+            .setMessage(R.string.delete_source_confirmation)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.delete_source) { _, _ ->
+                preferences(activity)
+                    .edit()
+                    .remove(path)
+                    .apply()
+
+                Toast.makeText(activity, R.string.source_deleted, Toast.LENGTH_SHORT).show()
+            }
+            .show()
+    }
+
+    private fun showLinkDialog(activity: Activity, path: String, existingUrl: String) {
         val density = activity.resources.displayMetrics.density
         val horizontalPadding = (24 * density).toInt()
         val verticalPadding = (8 * density).toInt()
@@ -38,6 +70,8 @@ object SourceLinkManager {
             hint = activity.getString(R.string.source_url_hint)
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
             setSingleLine(true)
+            setText(existingUrl)
+            setSelection(text.length)
         }
 
         val container = LinearLayout(activity).apply {
@@ -52,8 +86,9 @@ object SourceLinkManager {
             )
         }
 
+        val title = if (existingUrl.isBlank()) R.string.add_source else R.string.edit_source
         val dialog = MaterialAlertDialogBuilder(activity)
-            .setTitle(R.string.add_source)
+            .setTitle(title)
             .setView(container)
             .setNegativeButton(android.R.string.cancel, null)
             .setNeutralButton(R.string.paste, null)
@@ -62,18 +97,7 @@ object SourceLinkManager {
 
         dialog.setOnShowListener {
             dialog.getButton(android.app.AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                val clipboard = activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val pastedText = clipboard.primaryClip
-                    ?.takeIf { it.itemCount > 0 }
-                    ?.getItemAt(0)
-                    ?.coerceToText(activity)
-                    ?.toString()
-                    .orEmpty()
-
-                if (pastedText.isNotBlank()) {
-                    input.setText(pastedText)
-                    input.setSelection(input.text.length)
-                }
+                pasteClipboard(activity, input)
             }
 
             dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
@@ -89,11 +113,26 @@ object SourceLinkManager {
                     .apply()
 
                 dialog.dismiss()
-                openUrl(activity, normalizedUrl)
+                Toast.makeText(activity, R.string.source_saved, Toast.LENGTH_SHORT).show()
             }
         }
 
         dialog.show()
+    }
+
+    private fun pasteClipboard(activity: Activity, input: EditText) {
+        val clipboard = activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val pastedText = clipboard.primaryClip
+            ?.takeIf { it.itemCount > 0 }
+            ?.getItemAt(0)
+            ?.coerceToText(activity)
+            ?.toString()
+            .orEmpty()
+
+        if (pastedText.isNotBlank()) {
+            input.setText(pastedText)
+            input.setSelection(input.text.length)
+        }
     }
 
     private fun normalizeUrl(rawUrl: String): String? {
