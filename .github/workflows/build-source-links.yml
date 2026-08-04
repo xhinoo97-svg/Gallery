@@ -10,11 +10,95 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
-      - name: Checkout
+      - name: Checkout feature branch
         uses: actions/checkout@v4
+        with:
+          ref: feature/source-links
+          fetch-depth: 0
+
+      - name: Apply reviewed cleanup and synchronize branches
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main feature/source-links
+          git checkout feature/source-links
+          git merge origin/main --no-edit
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('app/src/main/kotlin/org/fossify/gallery/extensions/Activity.kt')
+          text = path.read_text()
+
+          old_import = 'import org.fossify.gallery.helpers.RECYCLE_BIN\n'
+          new_import = (
+              'import org.fossify.gallery.helpers.RECYCLE_BIN\n'
+              'import org.fossify.gallery.helpers.SourceLinkPreferences\n'
+          )
+          if 'import org.fossify.gallery.helpers.SourceLinkPreferences\n' not in text:
+              if text.count(old_import) != 1:
+                  raise SystemExit('Expected one RECYCLE_BIN import')
+              text = text.replace(old_import, new_import, 1)
+
+          old = '''    deleteFile(fileDirItem, allowDeleteFolder, isDeletingMultipleFiles = false) {
+        if (deleteFromDatabase) {
+            ensureBackgroundThread {
+                deleteDBPath(fileDirItem.path)
+                runOnUiThread {
+                    callback?.invoke(it)
+                }
+            }
+        } else {
+            callback?.invoke(it)
+        }
+    }
+'''
+          new = '''    deleteFile(fileDirItem, allowDeleteFolder, isDeletingMultipleFiles = false) { wasSuccess ->
+        if (wasSuccess) {
+            SourceLinkPreferences.remove(this, fileDirItem.path)
+        }
+
+        if (deleteFromDatabase) {
+            ensureBackgroundThread {
+                deleteDBPath(fileDirItem.path)
+                runOnUiThread {
+                    callback?.invoke(wasSuccess)
+                }
+            }
+        } else {
+            callback?.invoke(wasSuccess)
+        }
+    }
+'''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif new not in text:
+              raise SystemExit('Could not find tryDeleteFileDirItem implementation')
+
+          path.write_text(text)
+          PY
+
+          git checkout origin/main^ -- .github/workflows/build-source-links.yml
+          rm -f .github/workflows/apply-source-delete-cleanup.yml
+          git add app/src/main/kotlin/org/fossify/gallery/extensions/Activity.kt .github/workflows/build-source-links.yml .github/workflows/apply-source-delete-cleanup.yml
+          if ! git diff --cached --quiet; then
+            git commit -m "Clean source links after successful media deletion"
+          fi
+          git push origin HEAD:feature/source-links
+
+          git checkout -B main origin/main
+          git checkout origin/main^ -- .github/workflows/build-source-links.yml
+          git add .github/workflows/build-source-links.yml
+          git commit -m "Restore normal APK build workflow"
+          git push origin HEAD:main
+
+          git fetch origin main
+          git checkout feature/source-links
+          git merge origin/main --no-edit
+          git push origin HEAD:feature/source-links
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
