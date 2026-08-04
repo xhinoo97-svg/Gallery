@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="source">Fonte</string>
+    <string name="add_source">Aggiungi fonte</string>
+    <string name="add_link">Aggiungi link</string>
+    <string name="edit_source">Modifica</string>
+    <string name="open_source">Apri fonte</string>
+    <string name="go_to_source">Vai alla fonte</string>
+    <string name="delete_source">Elimina</string>
+    <string name="delete_source_confirmation">Eliminare il link associato a questa foto?</string>
+    <string name="source_url_hint">https://esempio.com</string>
+    <string name="paste">Incolla</string>
+    <string name="save">Salva</string>
+    <string name="invalid_source_url">Inserisci un link web valido</string>
+    <string name="cannot_open_source">Impossibile aprire la fonte</string>
+    <string name="chrome_secure_folder_required">Google Chrome deve essere installato e abilitato dentro Area Personale</string>
+    <string name="source_photo_not_available">Foto non disponibile</string>
+    <string name="source_saved">Fonte salvata</string>
+    <string name="source_deleted">Fonte eliminata</string>
+</resources>

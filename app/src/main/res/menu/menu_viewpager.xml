@@ -76,6 +76,10 @@
         android:title="@string/create_shortcut"
         app:showAsAction="never" />
     <item
+        android:id="@+id/menu_source_link"
+        android:title="@string/source"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/menu_open_with"
         android:showAsAction="never"
         android:title="@string/open_with"

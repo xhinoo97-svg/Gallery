@@ -164,6 +164,8 @@ import org.fossify.gallery.helpers.SHOW_NEXT_ITEM
 import org.fossify.gallery.helpers.SHOW_PREV_ITEM
 import org.fossify.gallery.helpers.SHOW_RECYCLE_BIN
 import org.fossify.gallery.helpers.SKIP_AUTHENTICATION
+import org.fossify.gallery.helpers.SourceLinkManager
+import org.fossify.gallery.helpers.SourceLinkPreferences
 import org.fossify.gallery.helpers.SLIDESHOW_ANIMATION_FADE
 import org.fossify.gallery.helpers.SLIDESHOW_ANIMATION_NONE
 import org.fossify.gallery.helpers.SLIDESHOW_ANIMATION_SLIDE
@@ -219,6 +221,8 @@ class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, 
 
     override val appBarLayout: AppBarLayout
         get() = binding.mediumViewerAppbar
+
+    protected override fun getCurrentSourcePath(): String = getCurrentPath()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -373,6 +377,7 @@ class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, 
                 R.id.menu_default_orientation -> toggleOrientation(SCREEN_ORIENTATION_UNSPECIFIED)
                 R.id.menu_save_as -> saveImageAs()
                 R.id.menu_create_shortcut -> createShortcut()
+                R.id.menu_source_link -> SourceLinkManager.handle(this, getCurrentPath())
                 R.id.menu_resize -> resizeImage()
                 R.id.menu_settings -> launchSettings()
                 R.id.menu_copy_to_clipboard -> copyImageToClipboard()
@@ -794,6 +799,7 @@ class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, 
 
             config.tempFolderPath = ""
             if (!isCopyOperation) {
+                SourceLinkPreferences.move(this, currPath, newPath)
                 refreshViewPager()
                 updateFavoritePaths(fileDirItems, it)
             }
@@ -1312,6 +1318,7 @@ class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, 
             ensureBackgroundThread {
                 updateDBMediaPath(oldPath, it)
             }
+            SourceLinkPreferences.move(this, oldPath, it)
             updateActionbarTitle()
         }
     }
@@ -1496,6 +1503,16 @@ class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, 
             }.withEndAction {
                 binding.mediumViewerAppbar.beVisibleIf(newAlpha == 1f)
             }.start()
+
+            binding.sourceLinkButton.animate().alpha(newAlpha).withStartAction {
+                if (newAlpha == 1f) {
+                    refreshSourceLinkButton()
+                }
+            }.withEndAction {
+                if (newAlpha == 0f) {
+                    binding.sourceLinkButton.visibility = View.GONE
+                }
+            }.start()
         }
     }
 
@@ -1529,6 +1546,7 @@ class ViewPagerActivity : BaseViewerActivity(), ViewPager.OnPageChangeListener, 
             refreshMenuItems()
             scheduleSwipe()
         }
+        refreshSourceLinkButton()
     }
 
     override fun onPageScrollStateChanged(state: Int) {
