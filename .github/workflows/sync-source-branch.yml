@@ -1,0 +1,39 @@
+name: Sync source branch with main
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge main into feature branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main feature/source-links
+          git checkout feature/source-links
+
+          if ! git merge origin/main --no-edit; then
+            conflicts="$(git diff --name-only --diff-filter=U)"
+            if [ "$conflicts" != ".github/workflows/build-source-links.yml" ]; then
+              echo "Unexpected merge conflicts:"
+              echo "$conflicts"
+              exit 1
+            fi
+            git checkout --theirs .github/workflows/build-source-links.yml
+            git add .github/workflows/build-source-links.yml
+            git commit --no-edit
+          fi
+
+          git push origin HEAD:feature/source-links
