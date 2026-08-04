@@ -1,6 +1,7 @@
 package org.fossify.gallery.activities
 
 import android.os.Bundle
+import android.view.MenuItem
 import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 import org.fossify.commons.extensions.updateMarginWithBase
 import org.fossify.commons.extensions.updatePaddingWithBase
 import org.fossify.gallery.extensions.config
+import org.fossify.gallery.helpers.SourceLinkManager
 
 abstract class BaseViewerActivity : SimpleActivity() {
     override val padCutout: Boolean = false
@@ -87,5 +89,17 @@ abstract class BaseViewerActivity : SimpleActivity() {
             }
             insets
         }
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun onSourceLinkMenuClick(item: MenuItem): Boolean {
+        val path = runCatching {
+            javaClass.getDeclaredMethod("getCurrentPath").apply {
+                isAccessible = true
+            }.invoke(this) as? String
+        }.getOrNull().orEmpty()
+
+        SourceLinkManager.handle(this, path)
+        return true
     }
 }
