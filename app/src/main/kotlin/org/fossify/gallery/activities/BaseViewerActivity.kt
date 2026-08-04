@@ -21,6 +21,7 @@ import org.fossify.gallery.R
 import org.fossify.gallery.extensions.config
 import org.fossify.gallery.helpers.SourceLinkManager
 import org.fossify.gallery.helpers.SourceLinkPreferences
+import org.fossify.gallery.helpers.sourceLinkPreferenceAffectsVisibleLink
 
 abstract class BaseViewerActivity : SimpleActivity() {
     override val padCutout: Boolean = false
@@ -32,7 +33,7 @@ abstract class BaseViewerActivity : SimpleActivity() {
 
     private val sourcePreferencesListener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (SourceLinkPreferences.affectsVisibleLink(key)) {
+            if (sourceLinkPreferenceAffectsVisibleLink(key)) {
                 scheduleSourceLinkButtonRefresh()
             }
         }
@@ -54,7 +55,7 @@ abstract class BaseViewerActivity : SimpleActivity() {
         findViewById<MaterialButton>(R.id.source_link_button)?.apply {
             setOnClickListener {
                 val path = getCurrentSourcePath()
-                if (SourceLinkManager.hasSource(this@BaseViewerActivity, path)) {
+                if (tag == true) {
                     SourceLinkManager.openStoredSource(this@BaseViewerActivity, path)
                 } else {
                     SourceLinkManager.handle(this@BaseViewerActivity, path)
@@ -146,6 +147,7 @@ abstract class BaseViewerActivity : SimpleActivity() {
         if (path.isBlank()) {
             button.visibility = View.GONE
             button.isEnabled = false
+            button.tag = false
             return
         }
 
@@ -161,6 +163,7 @@ abstract class BaseViewerActivity : SimpleActivity() {
 
             button.visibility = View.VISIBLE
             button.setText(if (hasSource) R.string.go_to_source else R.string.add_link)
+            button.tag = hasSource
             button.isEnabled = true
         }
     }
