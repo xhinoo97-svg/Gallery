@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
 import android.text.InputType
 import android.widget.EditText
@@ -43,20 +42,6 @@ object SourceLinkManager {
         } else {
             openUrl(activity, storedUrl)
         }
-    }
-
-    fun registerListener(
-        context: Context,
-        listener: SharedPreferences.OnSharedPreferenceChangeListener,
-    ) {
-        SourceLinkPreferences.register(context, listener)
-    }
-
-    fun unregisterListener(
-        context: Context,
-        listener: SharedPreferences.OnSharedPreferenceChangeListener,
-    ) {
-        SourceLinkPreferences.unregister(context, listener)
     }
 
     private fun showSourceActions(activity: Activity, path: String, storedUrl: String) {
