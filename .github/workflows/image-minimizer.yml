@@ -10,5 +10,6 @@ on:
 
 jobs:
   call-image-minimizer-workflow:
+    if: ${{ github.repository == 'FossifyOrg/Gallery' }}
     uses: FossifyOrg/.github/.github/workflows/image-minimizer.yml@main
     secrets: inherit
