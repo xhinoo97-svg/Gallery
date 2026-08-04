@@ -46,6 +46,7 @@ import org.fossify.gallery.dialogs.ResizeMultipleImagesDialog
 import org.fossify.gallery.dialogs.ResizeWithPathDialog
 import org.fossify.gallery.helpers.DIRECTORY
 import org.fossify.gallery.helpers.RECYCLE_BIN
+import org.fossify.gallery.helpers.SourceLinkPreferences
 import org.fossify.gallery.helpers.TEMP_FOLDER_NAME
 import org.fossify.gallery.models.DateTaken
 import java.io.*
@@ -298,6 +299,10 @@ fun BaseSimpleActivity.toggleFileVisibility(oldPath: String, hide: Boolean, call
 
     val newPath = "$path/$filename"
     renameFile(oldPath, newPath, false) { success, useAndroid30Way ->
+        if (success) {
+        SourceLinkPreferences.move(this, oldPath, newPath)
+        }
+
         runOnUiThread {
             callback?.invoke(newPath)
         }
