@@ -4,6 +4,7 @@
     <string name="add_source">Aggiungi fonte</string>
     <string name="edit_source">Modifica</string>
     <string name="open_source">Apri fonte</string>
+    <string name="go_to_source">Vai alla fonte</string>
     <string name="delete_source">Elimina</string>
     <string name="delete_source_confirmation">Eliminare il link associato a questa foto?</string>
     <string name="source_url_hint">https://esempio.com</string>
