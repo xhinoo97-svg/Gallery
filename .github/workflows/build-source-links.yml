@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - feature/source-links
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
