@@ -77,7 +77,6 @@
         app:showAsAction="never" />
     <item
         android:id="@+id/menu_source_link"
-        android:onClick="onSourceLinkMenuClick"
         android:title="@string/source"
         app:showAsAction="never" />
     <item
