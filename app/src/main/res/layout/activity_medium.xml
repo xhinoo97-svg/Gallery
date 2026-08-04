@@ -14,15 +14,38 @@
         android:id="@+id/bottom_actions"
         layout="@layout/bottom_actions" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/source_link_button"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="72dp"
+        android:elevation="8dp"
+        android:minWidth="0dp"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:text="@string/go_to_source"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        android:visibility="gone"
+        app:backgroundTint="#4A4A4A"
+        app:cornerRadius="24dp"
+        app:icon="@drawable/ic_source_globe_vector"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        app:iconTint="@android:color/white" />
+
     <ImageView
         android:id="@+id/top_shadow"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:minHeight="@dimen/default_status_action_height"
         android:layout_alignBottom="@id/medium_viewer_appbar"
         android:layout_alignParentTop="true"
         android:background="@drawable/gradient_background_flipped"
-        android:contentDescription="@null" />
+        android:contentDescription="@null"
+        android:minHeight="@dimen/default_status_action_height" />
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/medium_viewer_appbar"
