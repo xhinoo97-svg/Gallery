@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager.widget.ViewPager
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
 import org.fossify.commons.extensions.updateMarginWithBase
 import org.fossify.commons.extensions.updatePaddingWithBase
@@ -52,9 +53,14 @@ abstract class BaseViewerActivity : SimpleActivity() {
         SourceLinkManager.registerListener(this, sourcePreferencesListener)
         attachSourcePagerListener()
 
-        findViewById<View>(R.id.source_link_button)?.apply {
+        findViewById<MaterialButton>(R.id.source_link_button)?.apply {
             setOnClickListener {
-                SourceLinkManager.openStoredSource(this@BaseViewerActivity, getCurrentSourcePath())
+                val path = getCurrentSourcePath()
+                if (SourceLinkManager.hasSource(this@BaseViewerActivity, path)) {
+                    SourceLinkManager.openStoredSource(this@BaseViewerActivity, path)
+                } else {
+                    SourceLinkManager.handle(this@BaseViewerActivity, path)
+                }
             }
             post { refreshSourceLinkButton() }
         }
@@ -143,13 +149,17 @@ abstract class BaseViewerActivity : SimpleActivity() {
     }
 
     private fun refreshSourceLinkButton() {
-        val button = findViewById<View>(R.id.source_link_button) ?: return
+        val button = findViewById<MaterialButton>(R.id.source_link_button) ?: return
         val path = getCurrentSourcePath()
-        button.visibility = if (SourceLinkManager.hasSource(this, path)) {
-            View.VISIBLE
-        } else {
-            View.GONE
+
+        if (path.isBlank()) {
+            button.visibility = View.GONE
+            return
         }
+
+        val hasSource = SourceLinkManager.hasSource(this, path)
+        button.visibility = View.VISIBLE
+        button.setText(if (hasSource) R.string.go_to_source else R.string.add_link)
     }
 
     private fun getCurrentSourcePath(): String {
