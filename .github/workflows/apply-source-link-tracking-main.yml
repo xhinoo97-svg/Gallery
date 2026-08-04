@@ -45,34 +45,20 @@ jobs:
                   raise SystemExit('Expected exactly one RECYCLE_BIN import')
               text = text.replace(import_anchor, import_anchor + source_import, 1)
 
-          old = '''    renameFile(oldPath, newPath, false) { success, useAndroid30Way ->
-              runOnUiThread {
-                  callback?.invoke(newPath)
-              }
-
-              ensureBackgroundThread {
-                  updateDBMediaPath(oldPath, newPath)
-              }
-          }
-          '''
-          new = '''    renameFile(oldPath, newPath, false) { success, useAndroid30Way ->
-              if (success) {
-                  SourceLinkPreferences.move(this, oldPath, newPath)
-              }
-
-              runOnUiThread {
-                  callback?.invoke(newPath)
-              }
-
-              ensureBackgroundThread {
-                  updateDBMediaPath(oldPath, newPath)
-              }
-          }
-          '''
-          if new not in text:
-              if text.count(old) != 1:
+          callback_anchor = (
+              '    renameFile(oldPath, newPath, false) { success, useAndroid30Way ->\n'
+          )
+          source_move = '        SourceLinkPreferences.move(this, oldPath, newPath)\n'
+          if source_move not in text:
+              if text.count(callback_anchor) != 1:
                   raise SystemExit('Expected exactly one toggleFileVisibility callback')
-              text = text.replace(old, new, 1)
+              insertion = (
+                  callback_anchor
+                  + '        if (success) {\n'
+                  + source_move
+                  + '        }\n\n'
+              )
+              text = text.replace(callback_anchor, insertion, 1)
 
           path.write_text(text)
           PY
@@ -92,6 +78,8 @@ jobs:
       - name: Remove temporary workflow from main
         if: always()
         run: |
+          git reset --hard
+          git clean -fd
           git fetch origin main
           git checkout -B main origin/main
           rm -f .github/workflows/apply-source-link-tracking-main.yml
