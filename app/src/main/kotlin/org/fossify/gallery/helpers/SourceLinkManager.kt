@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.text.InputType
 import android.widget.EditText
@@ -22,12 +23,39 @@ object SourceLinkManager {
             return
         }
 
-        val storedUrl = preferences(activity).getString(path, null).orEmpty()
+        val storedUrl = getStoredUrl(activity, path)
         if (storedUrl.isBlank()) {
             showLinkDialog(activity, path, existingUrl = "")
         } else {
             showSourceActions(activity, path, storedUrl)
         }
+    }
+
+    fun hasSource(context: Context, path: String): Boolean {
+        return path.isNotBlank() && getStoredUrl(context, path).isNotBlank()
+    }
+
+    fun openStoredSource(activity: Activity, path: String) {
+        val storedUrl = getStoredUrl(activity, path)
+        if (storedUrl.isBlank()) {
+            handle(activity, path)
+        } else {
+            openUrl(activity, storedUrl)
+        }
+    }
+
+    fun registerListener(
+        context: Context,
+        listener: SharedPreferences.OnSharedPreferenceChangeListener,
+    ) {
+        preferences(context).registerOnSharedPreferenceChangeListener(listener)
+    }
+
+    fun unregisterListener(
+        context: Context,
+        listener: SharedPreferences.OnSharedPreferenceChangeListener,
+    ) {
+        preferences(context).unregisterOnSharedPreferenceChangeListener(listener)
     }
 
     private fun showSourceActions(activity: Activity, path: String, storedUrl: String) {
@@ -82,8 +110,8 @@ object SourceLinkManager {
                 input,
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ),
             )
         }
 
@@ -172,6 +200,10 @@ object SourceLinkManager {
         if (!opened) {
             Toast.makeText(activity, R.string.chrome_secure_folder_required, Toast.LENGTH_LONG).show()
         }
+    }
+
+    private fun getStoredUrl(context: Context, path: String): String {
+        return preferences(context).getString(path, null).orEmpty()
     }
 
     private fun preferences(context: Context) =
